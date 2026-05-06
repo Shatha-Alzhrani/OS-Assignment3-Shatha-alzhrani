@@ -45,6 +45,8 @@ class SharedResources {
     // Example: public static final Semaphore cpuSemaphore = new Semaphore(1);
     // Added lock for execution log
     public static final java.util.concurrent.locks.ReentrantLock logLock = new java.util.concurrent.locks.ReentrantLock();
+    // Added semaphore to control CPU access
+    public static final java.util.concurrent.Semaphore cpuSemaphore = new java.util.concurrent.Semaphore(1);
 
     // Method to increment context switch counter
     public static void incrementContextSwitch() {
@@ -121,6 +123,9 @@ class Process implements Runnable {
         // This ensures only allowed number of processes run simultaneously
 
         try {
+            // Acquire CPU semaphore before execution
+            SharedResources.cpuSemaphore.acquire();
+
             if (startTime == -1) {
                 startTime = System.currentTimeMillis();
             }
@@ -178,10 +183,13 @@ class Process implements Runnable {
                         Colors.RESET);
             }
             System.out.println();
-
+        } catch (InterruptedException e) {
+            System.out.println("Thread interrupted");
         } finally {
             // TODO #4: Release CPU semaphore here
             // Always release in finally block to prevent deadlocks!
+            SharedResources.cpuSemaphore.release();
+
         }
     }
 
